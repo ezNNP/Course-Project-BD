@@ -12,8 +12,8 @@ CREATE TABLE Caste (
 CREATE TABLE Settlement (
                             id serial primary key,
                             population int NOT NULL,
-                            position_x int NOT NULL,
-                            position_y int NOT NULL,
+                            positionx int NOT NULL,
+                            positiony int NOT NULL,
                             world_id int references World(id) NOT NULL,
                             caste_id int references Caste(id) NOT NULL
 );
@@ -209,11 +209,11 @@ INSERT INTO Caste (name, hunger_ratio) VALUES ('ancients', 0.85); /* древн�
 INSERT INTO Caste (name, hunger_ratio) VALUES ('nethers', 1.1); /* люди ада */
 INSERT INTO Caste (name, hunger_ratio) VALUES ('wildmen', 1.4); /* дикари */
 
-INSERT INTO Settlement (population, position_x, position_y, world_id, caste_id) VALUES (0, 5, 5, 1, 1);
-INSERT INTO Settlement (population, position_x, position_y, world_id, caste_id) VALUES (0, 10, 10, 1, 2);
-INSERT INTO Settlement (population, position_x, position_y, world_id, caste_id) VALUES (0, 20, 10, 1, 3);
-INSERT INTO Settlement (population, position_x, position_y, world_id, caste_id) VALUES (0, -133, -27, 1, 5);
-INSERT INTO Settlement (population, position_x, position_y, world_id, caste_id) VALUES (0, 5, 5, 2, 6);
+INSERT INTO Settlement (population, positionx, positiony, world_id, caste_id) VALUES (0, 5, 5, 1, 1);
+INSERT INTO Settlement (population, positionx, positiony, world_id, caste_id) VALUES (0, 10, 10, 1, 2);
+INSERT INTO Settlement (population, positionx, positiony, world_id, caste_id) VALUES (0, 20, 10, 1, 3);
+INSERT INTO Settlement (population, positionx, positiony, world_id, caste_id) VALUES (0, -133, -27, 1, 5);
+INSERT INTO Settlement (population, positionx, positiony, world_id, caste_id) VALUES (0, 5, 5, 2, 6);
 
 INSERT INTO People (name, settlement_id, caste_id) VALUES ('Vasiliy', 1, 1);
 INSERT INTO People (name, settlement_id, caste_id) VALUES ('German', 1, 1);

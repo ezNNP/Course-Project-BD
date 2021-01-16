@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.*;
 import ru.stray27.project_backend.dto.PeopleDto;
 import ru.stray27.project_backend.entities.People;
 import ru.stray27.project_backend.repositories.BattleRepository;
+import ru.stray27.project_backend.repositories.CasteRepository;
 import ru.stray27.project_backend.repositories.PeopleRepository;
 import ru.stray27.project_backend.repositories.SettlementRepository;
 
@@ -27,6 +28,9 @@ public class PeopleController {
 
     @Autowired
     private SettlementRepository settlementRepository;
+
+    @Autowired
+    private CasteRepository casteRepository;
 
     @Autowired
     private ModelMapper modelMapper;
@@ -76,6 +80,7 @@ public class PeopleController {
     private People convertToEntity(PeopleDto dto) {
         People people = modelMapper.map(dto, People.class);
         people.setSettlement(settlementRepository.findById(dto.getSettlementId()).orElse(null));
+        people.setCaste(casteRepository.findById(dto.getCasteId()).orElse(null));
         if (dto.getBattlesId() != null) {
             for (Integer bId : dto.getBattlesId()) {
                 people.getBattles().add(battleRepository.findById(bId).orElse(null));
