@@ -45,7 +45,7 @@ CREATE TABLE People (
                         caste_id int references Caste(id) NOT NULL
 );
 
-CREATE TABLE Monster (
+CREATE TABLE Monsters (
                           id serial primary key,
                           name varchar NOT NULL,
                           health float NOT NULL DEFAULT 10.0,
@@ -54,10 +54,10 @@ CREATE TABLE Monster (
 
 CREATE TABLE Battle (
                         id serial primary key,
-                        people_id int references People(id)    NOT NULL,
-                        monster_id int references Monster (id) NOT NULL,
-                        damage_to_person float                 NOT NULL DEFAULT 0.0,
-                        damage_to_monster float                NOT NULL DEFAULT 0.0
+                        people_id int references People(id) NOT NULL,
+                        monster_id int references Monsters(id) NOT NULL,
+                        damage_to_person float NOT NULL DEFAULT 0.0,
+                        damage_to_monster float NOT NULL DEFAULT 0.0
 );
 
 CREATE TABLE Animal (
@@ -71,14 +71,14 @@ CREATE TABLE Animal (
 );
 
 CREATE TABLE Weapon (
-                         id serial primary key,
-                         name varchar NOT NULL DEFAULT 'Weapon',
-                         strength float NOT NULL DEFAULT 1.0,
-                         damage float NOT NULL DEFAULT 1.0,
-                         owner_id int references People(id) NOT NULL
+                        id serial primary key,
+                        name varchar NOT NULL DEFAULT 'Weapon',
+                        strength float NOT NULL DEFAULT 1.0,
+                        damage float NOT NULL DEFAULT 1.0,
+                        owner_id int references People(id) NOT NULL
 );
 
-CREATE TABLE Enchantment (
+CREATE TABLE Enchantments (
                               id serial primary key,
                               name varchar NOT NULL DEFAULT 'Enchantment',
                               strength_bonus float NOT NULL DEFAULT 0.0,
@@ -87,42 +87,70 @@ CREATE TABLE Enchantment (
 
 CREATE TABLE Weapon_Enchantment (
                                     weapon_id      int references Weapon (id),
-                                    enchantment_id int references Enchantment (id)
+                                    enchantment_id int references Enchantments (id)
 );
 
 CREATE OR REPLACE PROCEDURE changeHealthAfterBattle(h_id int, m_id int, damage_p float, damage_m float) AS
 $$
 BEGIN
 UPDATE People SET health = (health - damage_p) WHERE id = h_id;
-UPDATE Monster SET health = (health - damage_m) WHERE id = m_id;
+UPDATE Monsters SET health = (health - damage_m) WHERE id = m_id;
 END;
-$$;
+$$
+language plpgsql;
 
 CREATE OR REPLACE PROCEDURE checkPersonHP(h_id int) AS
 $$
 BEGIN
 DELETE FROM People WHERE id = h_id AND health < 0;
 END;
-$$;
+$$
+language plpgsql;
 
 CREATE OR REPLACE PROCEDURE checkMonsterHP(m_id int) AS
 $$
 BEGIN
-DELETE FROM Monster WHERE id = m_id AND health < 0;
+DELETE FROM Monsters WHERE id = m_id AND health < 0;
 end;
-$$;
+$$
+language plpgsql;
+
+CREATE FUNCTION battle_trigger()
+    RETURNS TRIGGER
+AS
+    $$
+BEGIN
+CALL changeHealthAfterBattle(NEW.people_id, NEW.monster_id, NEW.damage_to_person, NEW.damage_to_monster);
+end;
+    $$
+LANGUAGE plpgsql;
 
 CREATE TRIGGER BattleTrigger AFTER INSERT ON Battle
-    EXECUTE PROCEDURE changeHealthAfterBattle(new.people_id,
-                                          new.monster_id,
-                                          new.damage_to_person,
-                                          new.damage_to_monster);
+    EXECUTE PROCEDURE battle_trigger();
+
+CREATE FUNCTION person_trigger()
+    RETURNS TRIGGER AS
+    $$
+BEGIN
+CALL checkPersonHP(NEW.id);
+end;
+    $$
+LANGUAGE plpgsql;
+
+CREATE FUNCTION monster_trigger()
+    RETURNS TRIGGER AS
+    $$
+BEGIN
+CALL checkMonsterHP(NEW.id);
+end;
+    $$
+LANGUAGE plpgsql;
 
 CREATE TRIGGER DeadPersonTrigger AFTER UPDATE ON People
-    EXECUTE PROCEDURE checkPersonHP(new.id);
+    EXECUTE PROCEDURE person_trigger();
 
-CREATE TRIGGER DeadMonsterTrigger AFTER UPDATE ON Monster
-    EXECUTE PROCEDURE checkMonsterHP(new.id);
+CREATE TRIGGER DeadMonsterTrigger AFTER UPDATE ON Monsters
+    EXECUTE PROCEDURE monster_trigger();
 
 create or replace function getAmountOfFoodSettlement(settlement integer) returns bigint as
 $$ select sum(food.amount)
@@ -168,7 +196,6 @@ create index settlement_id_index on settlement using hash(id);
 create index settlement_c_id_index on settlement using hash (caste_id);
 create index caste_id_index on caste using hash(id);
 create index people_set_index on people using hash(settlement_id);
-create index people_set_index on people using btree(gestational_age);
 
 INSERT INTO World (name) VALUES ('Overworld');
 INSERT INTO World (name) VALUES ('Nether');
@@ -201,10 +228,10 @@ INSERT INTO People (name, money, settlement_id, caste_id) VALUES ('Vsevolod', 13
 INSERT INTO People (name, money, settlement_id, caste_id) VALUES ('Lucifer', 999, 5, 6);
 INSERT INTO People (name, money, settlement_id, caste_id) VALUES ('Grafinya Zla', 5656, 5, 6);
 
-INSERT INTO Monster (name) VALUES ('Enderman Boris');
-INSERT INTO Monster (name) VALUES ('Creeper Kolya');
-INSERT INTO Monster (name) VALUES ('Zombie Strah');
-INSERT INTO Monster (name, health, damage) VALUES ('Ender Dragon', 100000, 300);
+INSERT INTO Monsters (name) VALUES ('Enderman Boris');
+INSERT INTO Monsters (name) VALUES ('Creeper Kolya');
+INSERT INTO Monsters (name) VALUES ('Zombie Strah');
+INSERT INTO Monsters (name, health, damage) VALUES ('Ender Dragon', 100000, 300);
 
 INSERT INTO Food (name, amount, settlement_id) VALUES ('Apple', 50, 1);
 INSERT INTO Food (name, satiety, amount, settlement_id) VALUES ('Pork Chop', 10, 10, 1);
@@ -223,7 +250,7 @@ INSERT INTO Resource (amount, settlement_id) VALUES (1000, 2);
 INSERT INTO Resource (amount, settlement_id) VALUES (10, 2);
 
 INSERT INTO Weapon (name, strength, damage, owner_id) VALUES ('Bow of strength', 20.0, 20.0, 1);
-INSERT INTO Enchantment (name, strength_bonus, damage_bonus) VALUES ('Strength Enchantment', 20.0, 0.0);
+INSERT INTO Enchantments (name, strength_bonus, damage_bonus) VALUES ('Strength Enchantment', 20.0, 0.0);
 
 INSERT INTO Weapon_Enchantment (weapon_id, enchantment_id) VALUES (1, 1);
 
