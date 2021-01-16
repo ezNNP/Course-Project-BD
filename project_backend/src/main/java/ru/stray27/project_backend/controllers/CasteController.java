@@ -77,11 +77,15 @@ public class CasteController {
 
     private Caste convertToEntity(CasteDto dto) {
         Caste caste = modelMapper.map(dto, Caste.class);
-        for (Integer pId : dto.getPeopleId()) {
-            caste.getPeople().add(peopleRepository.findById(pId).orElse(null));
+        if (dto.getPeopleId() != null) {
+            for (Integer pId : dto.getPeopleId()) {
+                caste.getPeople().add(peopleRepository.findById(pId).orElse(null));
+            }
         }
-        for (Integer sId : dto.getSettlementsId()) {
-            caste.getSettlements().add(settlementRepository.findById(sId).orElse(null));
+        if (dto.getSettlementsId() != null) {
+            for (Integer sId : dto.getSettlementsId()) {
+                caste.getSettlements().add(settlementRepository.findById(sId).orElse(null));
+            }
         }
         return caste;
     }

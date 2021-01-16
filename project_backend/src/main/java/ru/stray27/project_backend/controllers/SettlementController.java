@@ -88,14 +88,20 @@ public class SettlementController {
         Settlement settlement = modelMapper.map(dto, Settlement.class);
         settlement.setCaste(casteRepository.findById(dto.getCasteId()).orElse(null));
         settlement.setWorld(worldRepository.findById(dto.getWorldId()).orElse(null));
-        for (Integer fId : dto.getFoodId()) {
-            settlement.getFood().add(foodRepository.findById(fId).orElse(null));
+        if (dto.getFoodId() != null) {
+            for (Integer fId : dto.getFoodId()) {
+                settlement.getFood().add(foodRepository.findById(fId).orElse(null));
+            }
         }
-        for (Integer pId : dto.getPeopleId()) {
-            settlement.getPeople().add(peopleRepository.findById(pId).orElse(null));
+        if (dto.getPeopleId() != null) {
+            for (Integer pId : dto.getPeopleId()) {
+                settlement.getPeople().add(peopleRepository.findById(pId).orElse(null));
+            }
         }
-        for (Integer rId : dto.getResourcesId()) {
-            settlement.getResources().add(resourceRepository.findById(rId).orElse(null));
+        if (dto.getResourcesId() != null) {
+            for (Integer rId : dto.getResourcesId()) {
+                settlement.getResources().add(resourceRepository.findById(rId).orElse(null));
+            }
         }
         return settlement;
     }

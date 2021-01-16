@@ -79,8 +79,10 @@ public class WeaponController {
 
     private Weapon convertToEntity(WeaponDto dto) {
         Weapon weapon = modelMapper.map(dto, Weapon.class);
-        for (Integer eId : dto.getEnchantmentsId()) {
-            weapon.getEnchantments().add(enchantmentRepository.findById(eId).orElse(null));
+        if (dto.getEnchantmentsId() != null) {
+            for (Integer eId : dto.getEnchantmentsId()) {
+                weapon.getEnchantments().add(enchantmentRepository.findById(eId).orElse(null));
+            }
         }
         weapon.setOwner(peopleRepository.findById(dto.getOwnerId()).orElse(null));
         return weapon;

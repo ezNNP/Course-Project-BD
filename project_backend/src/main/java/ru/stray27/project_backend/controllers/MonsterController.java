@@ -75,8 +75,10 @@ public class MonsterController {
 
     private Monster convertToEntity(MonsterDto dto) {
         Monster monster = modelMapper.map(dto, Monster.class);
-        for (Integer bId : dto.getBattlesId()) {
-            monster.getBattles().add(battleRepository.findById(bId).orElse(null));
+        if (dto.getBattlesId() != null) {
+            for (Integer bId : dto.getBattlesId()) {
+                monster.getBattles().add(battleRepository.findById(bId).orElse(null));
+            }
         }
         return monster;
     }

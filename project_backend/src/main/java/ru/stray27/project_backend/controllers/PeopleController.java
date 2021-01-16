@@ -76,8 +76,10 @@ public class PeopleController {
     private People convertToEntity(PeopleDto dto) {
         People people = modelMapper.map(dto, People.class);
         people.setSettlement(settlementRepository.findById(dto.getSettlementId()).orElse(null));
-        for (Integer bId : dto.getBattlesId()) {
-            people.getBattles().add(battleRepository.findById(bId).orElse(null));
+        if (dto.getBattlesId() != null) {
+            for (Integer bId : dto.getBattlesId()) {
+                people.getBattles().add(battleRepository.findById(bId).orElse(null));
+            }
         }
         return people;
     }
