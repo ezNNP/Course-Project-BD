@@ -76,8 +76,10 @@ public class WorldController {
 
     private World convertToEntity(WorldDto dto) {
         World world = modelMapper.map(dto, World.class);
-        for (Integer sId : dto.getSettlementsId()) {
-            world.getSettlements().add(settlementRepository.findById(sId).orElse(null));
+        if (dto.getSettlementsId() != null) {
+            for (Integer sId : dto.getSettlementsId()) {
+                world.getSettlements().add(settlementRepository.findById(sId).orElse(null));
+            }
         }
         return world;
     }
