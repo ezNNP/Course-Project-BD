@@ -146,6 +146,31 @@ end;
 $$
     LANGUAGE plpgsql;
 
+CREATE FUNCTION increaseSettlementPopulation()
+RETURNS TRIGGER AS
+    $$
+    BEGIN
+        UPDATE Settlement SET population = population + 1 WHERE id = NEW.settlement_id;
+    end;
+    $$
+LANGUAGE plpgsql;
+
+CREATE FUNCTION decreaseSettlementPopulation()
+    RETURNS TRIGGER AS
+$$
+BEGIN
+    UPDATE Settlement SET population = population - 1 WHERE id = NEW.settlement_id;
+end;
+$$
+    LANGUAGE plpgsql;
+
+CREATE TRIGGER SettlementPopulationTriggerInc AFTER INSERT ON People
+    EXECUTE PROCEDURE increaseSettlementPopulation();
+
+CREATE TRIGGER SettlementPopulationTriggerDec AFTER DELETE ON People
+    EXECUTE PROCEDURE decreaseSettlementPopulation();
+
+
 CREATE TRIGGER DeadPersonTrigger AFTER UPDATE ON People
 EXECUTE PROCEDURE person_trigger();
 
