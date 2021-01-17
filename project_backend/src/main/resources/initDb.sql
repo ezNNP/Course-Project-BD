@@ -93,64 +93,64 @@ CREATE TABLE Weapon_Enchantment (
 CREATE OR REPLACE PROCEDURE changeHealthAfterBattle(h_id int, m_id int, damage_p float, damage_m float) AS
 $$
 BEGIN
-UPDATE People SET health = (health - damage_p) WHERE id = h_id;
-UPDATE Monsters SET health = (health - damage_m) WHERE id = m_id;
+    UPDATE People SET health = (health - damage_p) WHERE id = h_id;
+    UPDATE Monsters SET health = (health - damage_m) WHERE id = m_id;
 END;
 $$
-language plpgsql;
+    language plpgsql;
 
 CREATE OR REPLACE PROCEDURE checkPersonHP(h_id int) AS
 $$
 BEGIN
-DELETE FROM People WHERE id = h_id AND health < 0;
+    DELETE FROM People WHERE id = h_id AND health < 0;
 END;
 $$
-language plpgsql;
+    language plpgsql;
 
 CREATE OR REPLACE PROCEDURE checkMonsterHP(m_id int) AS
 $$
 BEGIN
-DELETE FROM Monsters WHERE id = m_id AND health < 0;
+    DELETE FROM Monsters WHERE id = m_id AND health < 0;
 end;
 $$
-language plpgsql;
+    language plpgsql;
 
 CREATE FUNCTION battle_trigger()
     RETURNS TRIGGER
 AS
-    $$
+$$
 BEGIN
-CALL changeHealthAfterBattle(NEW.people_id, NEW.monster_id, NEW.damage_to_person, NEW.damage_to_monster);
+    CALL changeHealthAfterBattle(NEW.people_id, NEW.monster_id, NEW.damage_to_person, NEW.damage_to_monster);
 end;
-    $$
-LANGUAGE plpgsql;
+$$
+    LANGUAGE plpgsql;
 
 CREATE TRIGGER BattleTrigger AFTER INSERT ON Battle
-    EXECUTE PROCEDURE battle_trigger();
+EXECUTE PROCEDURE battle_trigger();
 
 CREATE FUNCTION person_trigger()
     RETURNS TRIGGER AS
-    $$
+$$
 BEGIN
-CALL checkPersonHP(NEW.id);
+    CALL checkPersonHP(NEW.id);
 end;
-    $$
-LANGUAGE plpgsql;
+$$
+    LANGUAGE plpgsql;
 
 CREATE FUNCTION monster_trigger()
     RETURNS TRIGGER AS
-    $$
+$$
 BEGIN
-CALL checkMonsterHP(NEW.id);
+    CALL checkMonsterHP(NEW.id);
 end;
-    $$
-LANGUAGE plpgsql;
+$$
+    LANGUAGE plpgsql;
 
 CREATE TRIGGER DeadPersonTrigger AFTER UPDATE ON People
-    EXECUTE PROCEDURE person_trigger();
+EXECUTE PROCEDURE person_trigger();
 
-CREATE TRIGGER DeadMonsterTrigger AFTER UPDATE ON Monsters
-    EXECUTE PROCEDURE monster_trigger();
+CREATE TRIGGER DeadMonsterTrigger AFTER UPDATE ON Monster
+EXECUTE PROCEDURE monster_trigger();
 
 create or replace function getAmountOfFoodSettlement(settlement integer) returns bigint as
 $$ select sum(food.amount)
@@ -159,14 +159,16 @@ $$ select sum(food.amount)
     language sql;
 
 
-create or replace procedure increasePopulation(settlement text) as $$
+create or replace procedure increasePopulation(settlementId integer) as $$
 declare count integer;
+declare casteId integer;
 begin
-select count(name) into count from people where people.settlement_id=settlement and  is_pregnant = true and gestational_age >3;
-while count>0 loop
-            insert into people(health, strength, money,is_pregnant, gestational_age, settlement_id) values (10, 2, 0, false, 0, settlement);
-count:= count-1;
-end loop;
+    select count(name) into count from people where people.settlement_id=settlementId and  is_pregnant = true and gestational_age >3;
+    select caste_id into casteId from settlement where settlement.id = settlementId;
+    while count>0 loop
+            insert into people(name,health, strength, money,is_pregnant, gestational_age, settlement_id, caste_id) values ('child',10, 2, 0, false, 0, settlementId, casteId);
+            count:= count-1;
+        end loop;
 end;
 $$ language plpgsql;
 
@@ -178,17 +180,17 @@ from settlement
          join food on settlement.id = food.settlement_id
 where settlement.caste_id = $1;
 $$
-language sql;
+    language sql;
 
 create or replace procedure eatFood(s_id integer) as
 $$
 declare
-ratio double precision;
+    ratio double precision;
     c_id integer;
 begin
-select caste_id into c_id from settlement where settlement.id = s_id;
-select hunger_ratio into ratio from caste where caste.id = c_id;
-update food set amount = amount - food.amount*ratio/10 where food.settlement_id = s_id;
+    select caste_id into c_id from settlement where settlement.id = s_id;
+    select hunger_ratio into ratio from caste where caste.id = c_id;
+    update food set amount = amount - food.amount*ratio/10 where food.settlement_id = s_id;
 end;
 $$ language plpgsql;
 
