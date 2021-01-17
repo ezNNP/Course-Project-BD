@@ -20,7 +20,7 @@ public class LogicController {
     @GetMapping("eatFood")
     private ResponseEntity<?> eatFood(@RequestParam(name = "settlementId") Integer sId) {
         try {
-            foodRepository.eatFoodProcedure(sId);
+            foodRepository.eatFood(sId);
             return new ResponseEntity<>(HttpStatus.OK);
         } catch (Exception e) {
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
