@@ -45,17 +45,17 @@ CREATE TABLE People (
                         caste_id int references Caste(id) NOT NULL
 );
 
-CREATE TABLE Monsters (
-                          id serial primary key,
-                          name varchar NOT NULL,
-                          health float NOT NULL DEFAULT 10.0,
-                          damage float NOT NULL DEFAULT 0.5
+CREATE TABLE Monster (
+                         id serial primary key,
+                         name varchar NOT NULL,
+                         health float NOT NULL DEFAULT 10.0,
+                         damage float NOT NULL DEFAULT 0.5
 );
 
 CREATE TABLE Battle (
                         id serial primary key,
                         people_id int references People(id) NOT NULL,
-                        monster_id int references Monsters(id) NOT NULL,
+                        monster_id int references Monster(id) NOT NULL,
                         damage_to_person float NOT NULL DEFAULT 0.0,
                         damage_to_monster float NOT NULL DEFAULT 0.0
 );
@@ -94,7 +94,7 @@ CREATE OR REPLACE PROCEDURE changeHealthAfterBattle(h_id int, m_id int, damage_p
 $$
 BEGIN
     UPDATE People SET health = (health - damage_p) WHERE id = h_id;
-    UPDATE Monsters SET health = (health - damage_m) WHERE id = m_id;
+    UPDATE Monster SET health = (health - damage_m) WHERE id = m_id;
 END;
 $$
     language plpgsql;
@@ -110,29 +110,31 @@ $$
 CREATE OR REPLACE PROCEDURE checkMonsterHP(m_id int) AS
 $$
 BEGIN
-    DELETE FROM Monsters WHERE id = m_id AND health < 0;
+    DELETE FROM Monster WHERE id = m_id AND health < 0;
 end;
 $$
     language plpgsql;
 
-CREATE FUNCTION battle_trigger()
+CREATE OR REPLACE FUNCTION battle_trigger()
     RETURNS TRIGGER
 AS
 $$
 BEGIN
     CALL changeHealthAfterBattle(NEW.people_id, NEW.monster_id, NEW.damage_to_person, NEW.damage_to_monster);
+    RETURN OLD;
 end;
 $$
     LANGUAGE plpgsql;
 
 CREATE TRIGGER BattleTrigger AFTER INSERT ON Battle
-EXECUTE PROCEDURE battle_trigger();
+    FOR EACH ROW EXECUTE PROCEDURE battle_trigger();
 
-CREATE FUNCTION person_trigger()
+CREATE OR REPLACE FUNCTION person_trigger()
     RETURNS TRIGGER AS
 $$
 BEGIN
     CALL checkPersonHP(NEW.id);
+    RETURN OLD;
 end;
 $$
     LANGUAGE plpgsql;
@@ -142,40 +144,16 @@ CREATE FUNCTION monster_trigger()
 $$
 BEGIN
     CALL checkMonsterHP(NEW.id);
+    RETURN OLD;
 end;
 $$
     LANGUAGE plpgsql;
-
-CREATE FUNCTION increaseSettlementPopulation()
-RETURNS TRIGGER AS
-    $$
-    BEGIN
-        UPDATE Settlement SET population = population + 1 WHERE id = NEW.settlement_id;
-    end;
-    $$
-LANGUAGE plpgsql;
-
-CREATE FUNCTION decreaseSettlementPopulation()
-    RETURNS TRIGGER AS
-$$
-BEGIN
-    UPDATE Settlement SET population = population - 1 WHERE id = NEW.settlement_id;
-end;
-$$
-    LANGUAGE plpgsql;
-
-CREATE TRIGGER SettlementPopulationTriggerInc AFTER INSERT ON People
-    EXECUTE PROCEDURE increaseSettlementPopulation();
-
-CREATE TRIGGER SettlementPopulationTriggerDec AFTER DELETE ON People
-    EXECUTE PROCEDURE decreaseSettlementPopulation();
-
 
 CREATE TRIGGER DeadPersonTrigger AFTER UPDATE ON People
-EXECUTE PROCEDURE person_trigger();
+    FOR EACH ROW EXECUTE PROCEDURE person_trigger();
 
 CREATE TRIGGER DeadMonsterTrigger AFTER UPDATE ON Monster
-EXECUTE PROCEDURE monster_trigger();
+    FOR EACH ROW EXECUTE PROCEDURE monster_trigger();
 
 create or replace function getAmountOfFoodSettlement(settlement integer) returns bigint as
 $$ select sum(food.amount)
@@ -186,7 +164,7 @@ $$ select sum(food.amount)
 
 create or replace procedure increasePopulation(settlementId integer) as $$
 declare count integer;
-declare casteId integer;
+    declare casteId integer;
 begin
     select count(name) into count from people where people.settlement_id=settlementId and  is_pregnant = true and gestational_age >3;
     select caste_id into casteId from settlement where settlement.id = settlementId;
@@ -218,6 +196,40 @@ begin
     update food set amount = amount - food.amount*ratio/10 where food.settlement_id = s_id;
 end;
 $$ language plpgsql;
+
+CREATE OR REPLACE PROCEDURE changeSettlementPopulation(sId int, pop int) AS
+$$
+BEGIN
+    UPDATE Settlement SET population = (population + pop) WHERE id = sId;
+end;
+$$
+    LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION increaseSettlementPopulation()
+    RETURNS TRIGGER AS
+$$
+BEGIN
+    CALL changeSettlementPopulation(NEW.settlement_id, 1);
+    RETURN OLD;
+end;
+$$
+    LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION decreaseSettlementPopulation()
+    RETURNS TRIGGER AS
+$$
+BEGIN
+    CALL changeSettlementPopulation(NEW.settlement_id, -1);
+    RETURN OLD;
+end;
+$$
+    LANGUAGE plpgsql;
+
+CREATE TRIGGER SettlementPopulationTriggerInc AFTER INSERT ON People
+    FOR EACH ROW EXECUTE PROCEDURE increaseSettlementPopulation();
+
+CREATE TRIGGER SettlementPopulationTriggerDec AFTER DELETE ON People
+    FOR EACH ROW EXECUTE PROCEDURE decreaseSettlementPopulation();
 
 create index settlement_id_index on settlement using hash(id);
 create index settlement_c_id_index on settlement using hash (caste_id);
@@ -255,10 +267,10 @@ INSERT INTO People (name, money, settlement_id, caste_id) VALUES ('Vsevolod', 13
 INSERT INTO People (name, money, settlement_id, caste_id) VALUES ('Lucifer', 999, 5, 6);
 INSERT INTO People (name, money, settlement_id, caste_id) VALUES ('Grafinya Zla', 5656, 5, 6);
 
-INSERT INTO Monsters (name) VALUES ('Enderman Boris');
-INSERT INTO Monsters (name) VALUES ('Creeper Kolya');
-INSERT INTO Monsters (name) VALUES ('Zombie Strah');
-INSERT INTO Monsters (name, health, damage) VALUES ('Ender Dragon', 100000, 300);
+INSERT INTO Monster (name) VALUES ('Enderman Boris');
+INSERT INTO Monster (name) VALUES ('Creeper Kolya');
+INSERT INTO Monster (name) VALUES ('Zombie Strah');
+INSERT INTO Monster (name, health, damage) VALUES ('Ender Dragon', 100000, 300);
 
 INSERT INTO Food (name, amount, settlement_id) VALUES ('Apple', 50, 1);
 INSERT INTO Food (name, satiety, amount, settlement_id) VALUES ('Pork Chop', 10, 10, 1);
