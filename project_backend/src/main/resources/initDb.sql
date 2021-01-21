@@ -1,3 +1,16 @@
+DROP TABLE Weapon_Enchantment;
+DROP TABLE Enchantment;
+DROP TABLE Weapon;
+DROP TABLE Animal;
+DROP TABLE Battle;
+DROP TABLE Monster;
+DROP TABLE People;
+DROP TABLE Resource;
+DROP TABLE Food;
+DROP TABLE Settlement;
+DROP TABLE Caste;
+DROP TABLE World;
+
 CREATE TABLE World (
                        id serial primary key,
                        name varchar NOT NULL
@@ -78,7 +91,7 @@ CREATE TABLE Weapon (
                         owner_id int references People(id) NOT NULL
 );
 
-CREATE TABLE Enchantments (
+CREATE TABLE Enchantment (
                               id serial primary key,
                               name varchar NOT NULL DEFAULT 'Enchantment',
                               strength_bonus float NOT NULL DEFAULT 0.0,
@@ -87,7 +100,7 @@ CREATE TABLE Enchantments (
 
 CREATE TABLE Weapon_Enchantment (
                                     weapon_id      int references Weapon (id),
-                                    enchantment_id int references Enchantments (id)
+                                    enchantment_id int references Enchantment (id)
 );
 
 CREATE OR REPLACE PROCEDURE changeHealthAfterBattle(h_id int, m_id int, damage_p float, damage_m float) AS
@@ -289,7 +302,7 @@ INSERT INTO Resource (amount, settlement_id) VALUES (1000, 2);
 INSERT INTO Resource (amount, settlement_id) VALUES (10, 2);
 
 INSERT INTO Weapon (name, strength, damage, owner_id) VALUES ('Bow of strength', 20.0, 20.0, 1);
-INSERT INTO Enchantments (name, strength_bonus, damage_bonus) VALUES ('Strength Enchantment', 20.0, 0.0);
+INSERT INTO Enchantment (name, strength_bonus, damage_bonus) VALUES ('Strength Enchantment', 20.0, 0.0);
 
 INSERT INTO Weapon_Enchantment (weapon_id, enchantment_id) VALUES (1, 1);
 
